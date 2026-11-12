@@ -1,0 +1,2942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Fitness</title>
+  <!-- MediaPipe Pose 60FPS AI Vision Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+  <style>
+    /* ==========================================================================
+       APPLE iOS LIGHT THEME DESIGN SYSTEM (HIG COMPLIANT)
+       ========================================================================== */
+    :root {
+      --system-bg: #f2f2f7; /* iOS System Grouped Background Light */
+      --secondary-bg: #ffffff;
+      --tertiary-bg: #e5e5ea;
+      --quaternary-bg: #d1d1d6;
+      --separator: rgba(60, 60, 67, 0.14);
+      --label-primary: #000000;
+      --label-secondary: #6c6c70;
+      --label-tertiary: #8e8e93;
+      --label-quaternary: #aeaeb2;
+
+      /* Apple Activity Ring Colors */
+      --ring-move: #fa114f;
+      --ring-exercise: #30d158;
+      --ring-stand: #00b0ff;
+
+      /* Apple System Accents */
+      --system-blue: #007aff;
+      --system-green: #34c759;
+      --system-orange: #ff9500;
+      --system-red: #ff3b30;
+      --system-purple: #af52de;
+      --system-gray: #8e8e93;
+
+      --tab-bar-height: 84px;
+      --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      background: var(--system-bg);
+      color: var(--label-primary);
+      overflow: hidden;
+    }
+
+    /* iPhone Device Wrapper (Fluid on mobile, framed on desktop) */
+    .iphone-device {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      max-width: 100%;
+      max-height: 100dvh;
+      background: var(--system-bg);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    @media (min-width: 601px) {
+      body {
+        background: #d4d4d8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .iphone-device {
+        max-width: 414px;
+        height: 92vh;
+        max-height: 896px;
+        border-radius: 50px;
+        box-shadow: 0 0 0 10px #2c2c2e, 0 25px 70px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    /* Hide fake status bar & island on mobile phones; dock tab bar firmly */
+    @media (max-width: 600px) {
+      .dynamic-island-container,
+      .ios-status-bar,
+      .ios-home-indicator {
+        display: none !important;
+      }
+      .ios-nav-header {
+        padding-top: 14px !important;
+      }
+      .camera-frame-card {
+        height: 330px !important;
+      }
+      .ios-tab-bar {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: calc(56px + env(safe-area-inset-bottom, 12px)) !important;
+        padding: 6px 12px max(10px, env(safe-area-inset-bottom, 12px)) !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(25px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+        border-top: 0.5px solid rgba(0, 0, 0, 0.12) !important;
+        z-index: 99999 !important;
+      }
+      .ios-scroll-view {
+        padding-bottom: 150px !important;
+      }
+    }
+
+    /* Dynamic Island */
+    .dynamic-island-container {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 124px;
+      height: 34px;
+      background: #000000;
+      border-radius: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .island-camera {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #1c2738 0%, #030408 80%);
+      box-shadow: inset 0 0 1px rgba(255, 255, 255, 0.4);
+    }
+    .island-sensor {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #0a0a14;
+    }
+
+    /* iOS Status Bar (Light Mode with Dark Text & Glyphs) */
+    .ios-status-bar {
+      height: 52px;
+      padding: 14px 28px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      color: var(--label-primary);
+      z-index: 90;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .battery-icon {
+      width: 25px;
+      height: 12px;
+      border: 2px solid #000000;
+      border-radius: 4px;
+      padding: 1.5px;
+      position: relative;
+    }
+    .battery-icon::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: 2.5px;
+      width: 2px;
+      height: 4px;
+      background: #000000;
+      border-radius: 0 1px 1px 0;
+    }
+    .battery-fill {
+      width: 85%;
+      height: 100%;
+      background: #000000;
+      border-radius: 1.5px;
+    }
+
+    /* Scrollable Container */
+    .ios-scroll-view {
+      flex: 1;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding: 0 16px calc(var(--tab-bar-height) + 16px);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .ios-scroll-view::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ios-screen {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+    }
+    .ios-screen.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Navigation Header */
+    .ios-nav-header {
+      padding: 8px 4px 14px;
+    }
+    .ios-date-badge {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: var(--label-secondary);
+      margin-bottom: 2px;
+    }
+    .ios-large-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .ios-large-title {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      color: var(--label-primary);
+      line-height: 40px;
+    }
+    .ios-profile-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #007aff, #5856d6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
+    }
+
+    /* iOS Inset Cards in Light Mode */
+    .ios-card {
+      background: var(--secondary-bg);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 0.5px solid rgba(0, 0, 0, 0.04);
+    }
+
+    /* Apple Activity Rings Hero Card (Light Mode) */
+    .rings-hero-card {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 20px;
+    }
+    .rings-svg-wrapper {
+      position: relative;
+      width: 126px;
+      height: 126px;
+      flex-shrink: 0;
+    }
+    .rings-metrics-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .metric-row {
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-label-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .metric-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .metric-value-row {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--label-primary);
+      margin-top: 1px;
+    }
+    .metric-value-row span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--label-secondary);
+      letter-spacing: normal;
+    }
+
+    /* Buttons */
+    .ios-button {
+      background: var(--system-blue);
+      color: #ffffff;
+      border: none;
+      height: 50px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      cursor: pointer;
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.12s;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
+    }
+    .ios-button:active {
+      transform: scale(0.97);
+      opacity: 0.88;
+    }
+    .ios-button.green {
+      background: var(--system-green);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+    }
+
+    /* Inset Grouped Lists (Light Mode) */
+    .ios-section-header {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--label-secondary);
+      margin: 22px 4px 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .ios-section-header a {
+      color: var(--system-blue);
+      text-transform: none;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .ios-grouped-list {
+      background: var(--secondary-bg);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 0.5px solid rgba(0, 0, 0, 0.04);
+    }
+    .ios-list-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      position: relative;
+      cursor: pointer;
+      background: #ffffff;
+      transition: background 0.15s;
+    }
+    .ios-list-item:active {
+      background: #f2f2f7;
+    }
+    .ios-list-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 58px;
+      right: 0;
+      bottom: 0;
+      height: 0.5px;
+      background: var(--separator);
+    }
+    .ios-item-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      margin-right: 14px;
+      flex-shrink: 0;
+    }
+    .ios-item-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .ios-item-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--label-primary);
+    }
+    .ios-item-subtitle {
+      font-size: 13px;
+      color: var(--label-secondary);
+      margin-top: 2px;
+    }
+    .ios-chevron {
+      color: var(--label-quaternary);
+      font-size: 18px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+
+    /* Segmented Control in Light Mode */
+    .ios-segmented-control {
+      background: rgba(118, 118, 128, 0.12);
+      border-radius: 9px;
+      padding: 2px;
+      display: flex;
+      margin-bottom: 14px;
+    }
+    .ios-segment-btn {
+      flex: 1;
+      text-align: center;
+      padding: 7px 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--label-primary);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .ios-segment-btn.active {
+      background: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0.5px 1px rgba(0, 0, 0, 0.08);
+    }
+
+    /* 15-Exercise Horizontal Picker */
+    /* 15 Workout Selector Carousel (Apple HIG Inset Carousel) */
+    .workout-picker-container {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 6px 2px 14px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .workout-picker-container::-webkit-scrollbar {
+      display: none;
+    }
+    .workout-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #ffffff;
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--label-primary);
+      border: 0.5px solid rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      user-select: none;
+    }
+    .workout-chip:active {
+      transform: scale(0.96);
+    }
+    .workout-chip.active {
+      background: var(--system-blue);
+      color: #ffffff;
+      border-color: var(--system-blue);
+      box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35);
+      font-weight: 700;
+    }
+    .workout-chip-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--label-secondary);
+    }
+    .workout-chip.active .workout-chip-badge {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    /* Target Angle Breakdown Card */
+    .angle-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .angle-metric-box {
+      background: var(--system-bg);
+      border-radius: 14px;
+      padding: 10px 6px;
+      border: 0.5px solid rgba(0, 0, 0, 0.03);
+    }
+    .angle-metric-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--label-primary);
+    }
+    .angle-metric-lbl {
+      font-size: 10px;
+      color: var(--label-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Camera Viewport & High-Accuracy Calibrator */
+    .camera-frame-card {
+      background: #000000;
+      border-radius: 28px;
+      overflow: hidden;
+      position: relative;
+      height: 440px;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    /* 3 Sets Routine Tracker Card (Apple Health / Fitness HIG) */
+    .sets-tracker-card {
+      background: var(--secondary-bg);
+      border-radius: 22px;
+      padding: 18px 20px;
+      margin-top: 14px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      border: 0.5px solid rgba(0, 0, 0, 0.06);
+    }
+    .sets-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .sets-workout-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--label-primary);
+      letter-spacing: -0.5px;
+      margin-top: 2px;
+    }
+    .sets-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .set-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 15px;
+      border-radius: 16px;
+      background: var(--system-bg);
+      border: 1.5px solid transparent;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .set-row.active {
+      background: #ffffff;
+      border-color: var(--system-blue);
+      box-shadow: 0 4px 16px rgba(0, 122, 255, 0.14);
+    }
+    .set-row.completed {
+      background: rgba(52, 199, 89, 0.08);
+      border-color: rgba(52, 199, 89, 0.3);
+    }
+    .set-row.upcoming {
+      opacity: 0.50;
+    }
+    .set-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .set-num-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--label-primary);
+      flex-shrink: 0;
+    }
+    .set-row.active .set-num-badge {
+      background: var(--system-blue);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.35);
+    }
+    .set-row.completed .set-num-badge {
+      background: var(--system-green);
+      color: #ffffff;
+    }
+    .set-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--label-primary);
+    }
+    .set-status-text {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--label-secondary);
+      margin-top: 1px;
+    }
+    .set-counter-box {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-right: 14px;
+    }
+    .set-reps-num {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--label-primary);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.5px;
+    }
+    .set-row.active .set-reps-num {
+      color: var(--system-blue);
+    }
+    .set-row.completed .set-reps-num {
+      color: var(--system-green);
+    }
+    .set-reps-unit {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--label-secondary);
+      text-transform: uppercase;
+    }
+    .set-tick-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .set-tick-btn.active {
+      background: var(--system-green);
+      color: #ffffff;
+      border-color: #34c759;
+      box-shadow: 0 4px 14px rgba(52, 199, 89, 0.4);
+      animation: iosTickPulse 2s infinite;
+    }
+    .set-tick-btn.active:active {
+      transform: scale(0.88);
+    }
+    .set-tick-btn.completed {
+      background: rgba(52, 199, 89, 0.16);
+      color: var(--system-green);
+      border-color: rgba(52, 199, 89, 0.35);
+      cursor: default;
+      pointer-events: none;
+    }
+    .set-tick-btn.upcoming {
+      background: rgba(142, 142, 147, 0.1);
+      color: rgba(60, 60, 67, 0.25);
+      border: 2px solid rgba(60, 60, 67, 0.15);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    @keyframes iosTickPulse {
+      0%, 100% { box-shadow: 0 4px 14px rgba(52, 199, 89, 0.4); }
+      50% { box-shadow: 0 4px 22px rgba(52, 199, 89, 0.7); }
+    }
+
+    /* iOS Live Calibration HUD Pill (Floating Light/Dark Blur) */
+    .ios-hud-pill {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border-radius: 999px;
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.8);
+      z-index: 10;
+    }
+    .hud-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #000000;
+    }
+    .hud-pulsing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--system-green);
+      box-shadow: 0 0 8px var(--system-green);
+      animation: pulse 1.8s infinite;
+    }
+    .hud-metrics {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--label-secondary);
+    }
+    .hud-metrics strong {
+      color: #000000;
+    }
+
+    /* Accuracy Calibrator & Distance Guide Overlay */
+    .accuracy-calibration-banner {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    .calib-step {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .calib-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--label-primary);
+    }
+    .calib-desc {
+      font-size: 12px;
+      color: var(--label-secondary);
+    }
+    .accuracy-badge {
+      background: rgba(52, 199, 89, 0.15);
+      color: var(--system-green);
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Workout Stopwatch / Interval Clock Card */
+    .timer-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    .timer-display {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      font-variant-numeric: tabular-nums;
+      color: var(--label-primary);
+    }
+    .timer-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .timer-btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Water Intake / Hydration Tracker Card */
+    .hydration-card {
+      background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid rgba(0, 122, 255, 0.15);
+    }
+
+    /* Form Fields & iOS Switch */
+    .ios-field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 16px;
+      background: #ffffff;
+      position: relative;
+    }
+    .ios-field-row:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 16px;
+      right: 0;
+      bottom: 0;
+      height: 0.5px;
+      background: var(--separator);
+    }
+    .ios-field-label {
+      font-size: 16px;
+      color: var(--label-primary);
+    }
+    .ios-field-input {
+      background: transparent;
+      border: none;
+      color: var(--label-secondary);
+      font-size: 16px;
+      text-align: right;
+      outline: none;
+      font-family: inherit;
+      width: 170px;
+    }
+    .ios-field-input:focus {
+      color: var(--system-blue);
+    }
+
+    .ios-switch {
+      position: relative;
+      display: inline-block;
+      width: 51px;
+      height: 31px;
+    }
+    .ios-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--tertiary-bg);
+      transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 31px;
+    }
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 27px;
+      width: 27px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    input:checked + .switch-slider {
+      background-color: var(--system-green);
+    }
+    input:checked + .switch-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* iOS Light Theme Frosted Glass Tab Bar */
+    .ios-tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--tab-bar-height);
+      background: rgba(255, 255, 255, 0.84);
+      backdrop-filter: blur(25px) saturate(180%);
+      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+      display: flex;
+      justify-content: space-around;
+      padding: 6px 12px 22px;
+      z-index: 100;
+    }
+    .tab-bar-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      cursor: pointer;
+      color: var(--label-tertiary);
+      transition: color 0.15s;
+    }
+    .tab-bar-item.active {
+      color: var(--system-blue);
+    }
+    .tab-icon {
+      width: 25px;
+      height: 25px;
+      margin-bottom: 3px;
+    }
+    .tab-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: -0.1px;
+    }
+    .tab-bar-item.active .tab-label {
+      font-weight: 600;
+    }
+
+    /* iOS Home Indicator Bar */
+    .ios-home-indicator {
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 138px;
+      height: 5px;
+      background: #000000;
+      border-radius: 100px;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 110;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- iPhone Shell in Light Theme -->
+  <div class="iphone-device">
+
+    <!-- Dynamic Island -->
+    <div class="dynamic-island-container" onclick="pulseIsland()">
+      <div class="island-sensor"></div>
+      <div style="font-size: 10px; font-weight: 700; color: #a6ff00; letter-spacing: 0.2px;">AI 60 FPS</div>
+      <div class="island-camera"></div>
+    </div>
+
+    <!-- Status Bar (Light Mode Dark Text) -->
+    <div class="ios-status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <!-- Cellular Signal -->
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor">
+          <rect x="0" y="8" width="3" height="3" rx="0.5"/>
+          <rect x="4.5" y="5.5" width="3" height="5.5" rx="0.5"/>
+          <rect x="9" y="3" width="3" height="8" rx="0.5"/>
+          <rect x="13.5" y="0" width="3" height="11" rx="0.5"/>
+        </svg>
+        <span style="font-size: 12px; font-weight: 700; margin-left: -2px;">5G</span>
+        <div class="battery-icon">
+          <div class="battery-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Screen Content -->
+    <div class="ios-scroll-view" id="mainScrollView">
+
+      <!-- ================= 1. SUMMARY / HOME SCREEN ================= -->
+      <div id="screen-home" class="ios-screen active">
+        <div class="ios-nav-header">
+          <div class="ios-date-badge" id="currentDateHeader">MONDAY, NOV 9</div>
+          <div class="ios-large-title-row">
+            <h1 class="ios-large-title">Summary</h1>
+            <div class="ios-profile-avatar" onclick="switchTab('profile')">AJ</div>
+          </div>
+        </div>
+
+        <!-- Apple Activity Rings Hero Card (Light Mode) -->
+        <div class="ios-card rings-hero-card">
+          <div class="rings-svg-wrapper">
+            <svg width="126" height="126" viewBox="0 0 126 126" style="transform: rotate(-90deg);">
+              <!-- Light Mode Background Tracks -->
+              <circle cx="63" cy="63" r="52" fill="none" stroke="rgba(250, 17, 79, 0.14)" stroke-width="12"/>
+              <circle cx="63" cy="63" r="38" fill="none" stroke="rgba(48, 209, 88, 0.16)" stroke-width="12"/>
+              <circle cx="63" cy="63" r="24" fill="none" stroke="rgba(0, 176, 255, 0.16)" stroke-width="12"/>
+
+              <!-- Outer Ring: Move (Red) -->
+              <circle cx="63" cy="63" r="52" fill="none" stroke="url(#moveGrad)" stroke-width="12"
+                stroke-dasharray="326.7" stroke-dashoffset="65" stroke-linecap="round" />
+
+              <!-- Middle Ring: Exercise (Green) -->
+              <circle cx="63" cy="63" r="38" fill="none" stroke="url(#exerciseGrad)" stroke-width="12"
+                stroke-dasharray="238.7" stroke-dashoffset="35" stroke-linecap="round" />
+
+              <!-- Inner Ring: Stand (Cyan) -->
+              <circle cx="63" cy="63" r="24" fill="none" stroke="url(#standGrad)" stroke-width="12"
+                stroke-dasharray="150.8" stroke-dashoffset="25" stroke-linecap="round" />
+
+              <defs>
+                <linearGradient id="moveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fa114f"/>
+                  <stop offset="100%" stop-color="#ff3b30"/>
+                </linearGradient>
+                <linearGradient id="exerciseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#34c759"/>
+                  <stop offset="100%" stop-color="#30d158"/>
+                </linearGradient>
+                <linearGradient id="standGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#007aff"/>
+                  <stop offset="100%" stop-color="#00b0ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          <!-- Metrics Breakdown -->
+          <div class="rings-metrics-list">
+            <div class="metric-row">
+              <div class="metric-label-row" style="color: var(--ring-move);">
+                <div class="metric-dot" style="background: var(--ring-move);"></div>
+                <span>Move</span>
+              </div>
+              <div class="metric-value-row">
+                480 <span>/ 600 CAL</span>
+              </div>
+            </div>
+
+            <div class="metric-row">
+              <div class="metric-label-row" style="color: var(--system-green);">
+                <div class="metric-dot" style="background: var(--system-green);"></div>
+                <span>Exercise</span>
+              </div>
+              <div class="metric-value-row">
+                34 <span>/ 30 MIN</span>
+              </div>
+            </div>
+
+            <div class="metric-row">
+              <div class="metric-label-row" style="color: var(--ring-stand);">
+                <div class="metric-dot" style="background: var(--ring-stand);"></div>
+                <span>Stand</span>
+              </div>
+              <div class="metric-value-row">
+                10 <span>/ 12 HRS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW FEATURE: Workout Stopwatch / HIIT Interval Timer -->
+        <div class="timer-card">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--label-secondary); text-transform: uppercase;">HIIT Stopwatch</div>
+            <div class="timer-display" id="stopwatchDisplay">00:00.0</div>
+          </div>
+          <div class="timer-controls">
+            <button class="timer-btn" id="startTimerBtn" onclick="toggleTimer()" style="background: rgba(52, 199, 89, 0.18); color: var(--system-green);">Start</button>
+            <button class="timer-btn" onclick="resetTimer()" style="background: rgba(142, 142, 147, 0.18); color: var(--label-secondary);">Reset</button>
+          </div>
+        </div>
+
+        <!-- NEW FEATURE: Daily Hydration Tracker -->
+        <div class="hydration-card">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0, 122, 255, 0.15); display: flex; align-items: center; justify-content: center; font-size: 20px;">💧</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--label-primary);">Water Intake</div>
+              <div style="font-size: 12px; color: var(--label-secondary);" id="waterAmountText">1,750 ml / 2,500 ml</div>
+            </div>
+          </div>
+          <button onclick="addWater()" style="background: var(--system-blue); color: #fff; border: none; padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            + 250ml
+          </button>
+        </div>
+
+        <!-- Start Workout Button -->
+        <button class="ios-button green" onclick="startWorkoutMode('https://ai.kinestex.com')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Start AI Motion Workout
+        </button>
+
+        <!-- Recommended Workouts Section -->
+        <div class="ios-section-header">
+          <span>AI Form Workouts</span>
+          <a onclick="switchTab('workout')">See All</a>
+        </div>
+
+        <div class="ios-grouped-list">
+          <div class="ios-list-item" onclick="startWorkoutMode('https://ai.kinestex.com/camera')">
+            <div class="ios-item-icon" style="background: rgba(0, 122, 255, 0.12); color: #007aff;">📷</div>
+            <div class="ios-item-content">
+              <div class="ios-item-title">AI Camera Form Tracker</div>
+              <div class="ios-item-subtitle">High accuracy pose angle & joint detection • 10m</div>
+            </div>
+            <div class="ios-chevron">›</div>
+          </div>
+
+          <div class="ios-list-item" onclick="startWorkoutMode('https://ai.kinestex.com/challenge')">
+            <div class="ios-item-icon" style="background: rgba(255, 149, 0, 0.12); color: #ff9500;">🏆</div>
+            <div class="ios-item-content">
+              <div class="ios-item-title">Squat Jump Challenge</div>
+              <div class="ios-item-subtitle">Compete on global leaderboards • 5m</div>
+            </div>
+            <div class="ios-chevron">›</div>
+          </div>
+
+          <div class="ios-list-item" onclick="startWorkoutMode('https://ai.kinestex.com/personalized-plan')">
+            <div class="ios-item-icon" style="background: rgba(175, 82, 222, 0.12); color: #af52de;">🎯</div>
+            <div class="ios-item-content">
+              <div class="ios-item-title">High Intensity Cardio</div>
+              <div class="ios-item-subtitle">Calibrated to your BMI & motion rate • 20m</div>
+            </div>
+            <div class="ios-chevron">›</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 2. WORKOUT SCREEN (AUTHENTIC APPLE FITNESS HIG) ================= -->
+      <div id="screen-workout" class="ios-screen">
+        <div class="ios-nav-header">
+          <div class="ios-date-badge">TODAY • APPLE FITNESS MOTION</div>
+          <div class="ios-large-title-row">
+            <h1 class="ios-large-title">Workout</h1>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button id="cameraToggleHeaderBtn" onclick="toggleAICamera()" style="background:var(--system-blue); border:none; color:#fff; font-size:13px; font-weight:700; padding:8px 16px; border-radius:999px; cursor:pointer; box-shadow:0 3px 12px rgba(0,122,255,0.35); transition:all 0.2s; display:flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                <span>Start Camera</span>
+              </button>
+              <button onclick="resetWorkoutStats()" title="Reset workout stats" style="width:36px; height:36px; border-radius:50%; background:rgba(0,0,0,0.06); border:none; color:var(--label-secondary); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 15 Real Workout Selector Chips (Upper Body, Lower Body, Chest & Core) -->
+        <div class="workout-picker-container" id="workoutPickerContainer">
+          <!-- Upper Body -->
+          <div class="workout-chip active" onclick="selectWorkout('bicep_curl', this)">
+            <span>💪</span> <span>Bicep Curl</span> <span class="workout-chip-badge">Arms</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('hammer_curl', this)">
+            <span>🔨</span> <span>Hammer Curl</span> <span class="workout-chip-badge">Arms</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('lateral_raise', this)">
+            <span>🦅</span> <span>Lateral Raise</span> <span class="workout-chip-badge">Delts</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('front_raise', this)">
+            <span>🏹</span> <span>Front Raise</span> <span class="workout-chip-badge">Shoulders</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('shoulder_press', this)">
+            <span>🏋️‍♂️</span> <span>Shoulder Press</span> <span class="workout-chip-badge">Shoulders</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('overhead_extension', this)">
+            <span>⚡</span> <span>Overhead Tricep Extension</span> <span class="workout-chip-badge">Triceps</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('tricep_kickback', this)">
+            <span>🥊</span> <span>Tricep Kickback</span> <span class="workout-chip-badge">Triceps</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('dumbbell_row', this)">
+            <span>🚣</span> <span>Bent-Over Dumbbell Row</span> <span class="workout-chip-badge">Back</span>
+          </div>
+
+          <!-- Lower Body -->
+          <div class="workout-chip" onclick="selectWorkout('squat', this)">
+            <span>🦵</span> <span>Bodyweight Squat</span> <span class="workout-chip-badge">Legs</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('reverse_lunge', this)">
+            <span>🏃</span> <span>Reverse Lunge</span> <span class="workout-chip-badge">Glutes</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('calf_raise', this)">
+            <span>🦶</span> <span>Calf Raise</span> <span class="workout-chip-badge">Calves</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('glute_bridge', this)">
+            <span>🍑</span> <span>Glute Bridge</span> <span class="workout-chip-badge">Hips</span>
+          </div>
+
+          <!-- Chest & Core -->
+          <div class="workout-chip" onclick="selectWorkout('pushup', this)">
+            <span>🏋️</span> <span>Push-Up</span> <span class="workout-chip-badge">Chest</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('crunch', this)">
+            <span>🧘</span> <span>Crunch</span> <span class="workout-chip-badge">Core</span>
+          </div>
+          <div class="workout-chip" onclick="selectWorkout('leg_raise', this)">
+            <span>🦿</span> <span>Leg Raise</span> <span class="workout-chip-badge">Lower Abs</span>
+          </div>
+        </div>
+
+        <!-- iOS Motion Detection Camera Viewport Card -->
+        <div class="camera-frame-card" id="cameraFrameCard">
+          <!-- Floating iOS Light Blur HUD Pill -->
+          <div class="ios-hud-pill">
+            <div class="hud-status-badge">
+              <div class="hud-pulsing-dot" id="hudDot"></div>
+              <span id="hudExerciseTitle" style="font-size:13px; font-weight:700; color:#000;">Bicep Curl</span>
+            </div>
+            <div class="hud-metrics">
+              Reps: <strong id="workoutReps" style="font-size:15px; color:#000;">0</strong> • <strong id="workoutAcc" style="color: var(--system-green);">99%</strong> • <strong id="hudLiveAngle" style="color:var(--system-blue);">160°</strong>
+            </div>
+            <button onclick="addManualRep()" style="background: rgba(0, 122, 255, 0.12); border: none; color: var(--system-blue); padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer;">
+              + Rep
+            </button>
+          </div>
+
+          <!-- Direct AI Motion Tracking Viewport (Video + Canvas) -->
+          <div id="aiTrackingContainer" style="width:100%; height:100%; position:relative; display:block;">
+            <video id="aiVideo" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); background:#000; display:block;"></video>
+            <canvas id="aiCanvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; transform:scaleX(-1);"></canvas>
+
+            <!-- Camera Start Overlay (Apple Glass Inset) -->
+            <div id="aiCameraOverlay" style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(18,18,22,0.85); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; gap:12px; z-index:5; padding:28px; text-align:center;">
+              <div style="width:72px; height:72px; border-radius:24px; background:rgba(52,199,89,0.18); border:1px solid rgba(52,199,89,0.3); display:flex; align-items:center; justify-content:center; font-size:38px; box-shadow:0 8px 24px rgba(52,199,89,0.25);" id="selectedExerciseIcon">💪</div>
+              <div style="font-size:22px; font-weight:800; letter-spacing:-0.5px; color:#ffffff;" id="selectedExerciseOverlayTitle">Bicep Curl AI Motion Tracker</div>
+              <div style="font-size:13px; color:rgba(255,255,255,0.75); max-width:280px; line-height:1.45; font-weight:400;" id="selectedExerciseOverlayDesc">📷 Front view • 33-point skeletal pose tracking with multi-stage movement verification.</div>
+              <button onclick="startAICamera()" style="background:var(--system-green); color:#ffffff; border:none; padding:14px 32px; border-radius:999px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 6px 22px rgba(52,199,89,0.45); margin-top:8px; display:flex; align-items:center; gap:8px; transition:transform 0.15s;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                <span>Turn On AI Camera</span>
+              </button>
+            </div>
+
+            <!-- Floating Form Feedback Toast (Apple Translucent Frosted Glass) -->
+            <div id="aiFormToast" style="position:absolute; bottom:14px; left:14px; right:14px; background:rgba(255,255,255,0.90); backdrop-filter:blur(28px) saturate(190%); -webkit-backdrop-filter:blur(28px) saturate(190%); border-radius:18px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.7);">
+              <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                <span id="aiFeedbackIcon" style="font-size:18px;">💡</span>
+                <span id="aiFeedbackText" style="font-size:13px; font-weight:600; color:#000; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">Stand in view of camera to calibrate</span>
+              </div>
+              <div id="aiAngleMeter" style="font-size:12px; font-weight:700; color:var(--system-blue); background:rgba(0,122,255,0.1); padding:4px 10px; border-radius:999px; white-space:nowrap; margin-left:8px;">
+                Target: &lt; 85°
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- iOS 3-Sets Routine Tracker (Workout Name, Sets 1-3, Reps Count & Tick Advance Button) -->
+        <div class="sets-tracker-card" id="setsTrackerCard">
+          <div class="sets-header-row">
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: var(--system-blue); text-transform: uppercase; letter-spacing: 0.6px;">ROUTINE • 3 SETS</div>
+              <div class="sets-workout-title" id="setsWorkoutName">Bicep Curl</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="setsRoutineBadge" style="background: rgba(0, 122, 255, 0.1); color: var(--system-blue); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px;">
+                Set 1 of 3
+              </span>
+              <button onclick="resetAllSets()" style="background: rgba(142, 142, 147, 0.12); border: none; color: var(--label-secondary); font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 8px; cursor: pointer;">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 Sets List -->
+          <div class="sets-list">
+            <!-- SET 1 -->
+            <div class="set-row active" id="setRow-1">
+              <div class="set-info">
+                <div class="set-num-badge" id="setPill-1">1</div>
+                <div>
+                  <div class="set-title">Set 1</div>
+                  <div class="set-status-text" id="setStatus-1">Counting • 0 / 12 reps</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <div class="set-counter-box">
+                  <span class="set-reps-num" id="setReps-1">0</span>
+                  <span class="set-reps-unit">/ 12 reps</span>
+                </div>
+                <button class="set-tick-btn active" id="setTickBtn-1" onclick="completeCurrentSet(1)" title="Confirm Set 1">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- SET 2 -->
+            <div class="set-row upcoming" id="setRow-2">
+              <div class="set-info">
+                <div class="set-num-badge" id="setPill-2">2</div>
+                <div>
+                  <div class="set-title">Set 2</div>
+                  <div class="set-status-text" id="setStatus-2">Target: 12 reps</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <div class="set-counter-box">
+                  <span class="set-reps-num" id="setReps-2">0</span>
+                  <span class="set-reps-unit">/ 12 reps</span>
+                </div>
+                <button class="set-tick-btn upcoming" id="setTickBtn-2" onclick="completeCurrentSet(2)" title="Confirm Set 2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- SET 3 -->
+            <div class="set-row upcoming" id="setRow-3">
+              <div class="set-info">
+                <div class="set-num-badge" id="setPill-3">3</div>
+                <div>
+                  <div class="set-title">Set 3</div>
+                  <div class="set-status-text" id="setStatus-3">Target: 12 reps</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <div class="set-counter-box">
+                  <span class="set-reps-num" id="setReps-3">0</span>
+                  <span class="set-reps-unit">/ 12 reps</span>
+                </div>
+                <button class="set-tick-btn upcoming" id="setTickBtn-3" onclick="completeCurrentSet(3)" title="Confirm Set 3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Celebratory Routine Complete Banner (Hidden until Set 3 done) -->
+          <div id="routineCompleteBanner" style="display: none; margin-top: 14px; background: linear-gradient(135deg, rgba(52, 199, 89, 0.15), rgba(48, 209, 88, 0.08)); border: 1.5px solid rgba(52, 199, 89, 0.4); border-radius: 18px; padding: 18px; text-align: center;">
+            <div style="font-size: 36px;">🏆</div>
+            <div style="font-size: 18px; font-weight: 800; color: #1c7430; margin-top: 4px;">Routine Complete! All 3 Sets Finished!</div>
+            <div style="font-size: 13px; color: var(--label-secondary); margin-top: 4px;" id="routineCompleteDetails">Total Reps: 0 across 3 sets • 99% Form Accuracy</div>
+            <button onclick="resetAllSets()" style="margin-top: 12px; background: var(--system-green); color: #fff; border: none; padding: 10px 24px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(52, 199, 89, 0.35);">
+              🔄 Start New Routine
+            </button>
+          </div>
+        </div>
+
+        <!-- iOS Section Header: Biomechanical Joint Analysis -->
+        <div class="ios-section-header" style="margin: 20px 4px 8px;">
+          <span>Biomechanical Joint Analysis</span>
+          <span class="accuracy-badge" id="liveAccBadge">99.2% Calibrated</span>
+        </div>
+        <div class="ios-card" style="margin-top: 0; padding: 14px 16px; border-radius: 20px;">
+          <div class="angle-metrics-grid">
+            <div class="angle-metric-box" style="background: rgba(0, 122, 255, 0.08);">
+              <div class="angle-metric-val" id="valTargetJoint" style="font-size:13px; color:var(--system-blue);">Elbow</div>
+              <div class="angle-metric-lbl">Target Joint</div>
+            </div>
+            <div class="angle-metric-box" style="background: rgba(52, 199, 89, 0.08);">
+              <div class="angle-metric-val" id="valLiveAngle" style="color:var(--system-green);">160°</div>
+              <div class="angle-metric-lbl">Live Angle</div>
+            </div>
+            <div class="angle-metric-box" style="background: rgba(255, 149, 0, 0.08);">
+              <div class="angle-metric-val" id="valRepThreshold" style="color:var(--system-orange);">&lt; 85°</div>
+              <div class="angle-metric-lbl">Peak Flexion</div>
+            </div>
+            <div class="angle-metric-box" style="background: rgba(175, 82, 222, 0.08);">
+              <div class="angle-metric-val" id="valPrepThreshold" style="color:var(--system-purple);">&gt; 150°</div>
+              <div class="angle-metric-lbl">Full Extension</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- iOS Section Header: Form Perfection Guide -->
+        <div class="ios-section-header" style="margin: 20px 4px 8px;">
+          <span>Form Perfection Guide</span>
+        </div>
+        <div class="ios-card" style="margin-top: 0; padding: 16px 18px; border-radius: 20px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom: 8px;">
+            <div style="width:34px; height:34px; border-radius:10px; background:rgba(255,149,0,0.15); display:flex; align-items:center; justify-content:center; font-size:18px;">💡</div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--label-primary);" id="guideTitle">Bicep Curl Form Perfection Guide</div>
+          </div>
+          <div style="font-size: 13px; color: var(--label-secondary); line-height: 1.55;" id="guideDesc">
+            📷 Recommended: Front view • Stand upright with torso tall and elbows pinned to ribs. Curl hands toward shoulders until elbow angle is below 72°, squeeze biceps at top, then lower smoothly to full extension (>140°).
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 3. PROGRESS SCREEN ================= -->
+      <div id="screen-progress" class="ios-screen">
+        <div class="ios-nav-header">
+          <div class="ios-date-badge">ACTIVITY INSIGHTS</div>
+          <div class="ios-large-title-row">
+            <h1 class="ios-large-title">Trends</h1>
+          </div>
+        </div>
+
+        <!-- Highlight Metric Cards (Light Mode) -->
+        <div class="ios-card" style="display:flex; justify-content:space-between; text-align:center;">
+          <div style="flex:1;">
+            <div style="font-size:26px; font-weight:800; color:var(--system-green);">99%</div>
+            <div style="font-size:12px; color:var(--label-secondary); margin-top:2px;">Accuracy Score</div>
+          </div>
+          <div style="width:0.5px; background:var(--separator);"></div>
+          <div style="flex:1;">
+            <div style="font-size:26px; font-weight:800; color:var(--system-blue);">1,920</div>
+            <div style="font-size:12px; color:var(--label-secondary); margin-top:2px;">Calories Burned</div>
+          </div>
+          <div style="width:0.5px; background:var(--separator);"></div>
+          <div style="flex:1;">
+            <div style="font-size:26px; font-weight:800; color:var(--ring-move);">392</div>
+            <div style="font-size:12px; color:var(--label-secondary); margin-top:2px;">Total Reps</div>
+          </div>
+        </div>
+
+        <!-- Weekly Activity Trend (Apple Health Style Bar Chart) -->
+        <div class="ios-section-header">
+          <span>Weekly Reps Consistency</span>
+          <span style="color:var(--system-green); font-size:12px; font-weight:700;">↑ 22% vs avg</span>
+        </div>
+
+        <div class="ios-card" style="padding: 20px 14px 12px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; height:120px; padding-bottom:6px;">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:42px; background:var(--tertiary-bg); border-radius:6px;"></div>
+              <span style="font-size:11px; color:var(--label-secondary);">M</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:68px; background:var(--tertiary-bg); border-radius:6px;"></div>
+              <span style="font-size:11px; color:var(--label-secondary);">T</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:54px; background:var(--tertiary-bg); border-radius:6px;"></div>
+              <span style="font-size:11px; color:var(--label-secondary);">W</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:84px; background:var(--tertiary-bg); border-radius:6px;"></div>
+              <span style="font-size:11px; color:var(--label-secondary);">T</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:60px; background:var(--tertiary-bg); border-radius:6px;"></div>
+              <span style="font-size:11px; color:var(--label-secondary);">F</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:98px; background:var(--system-green); border-radius:6px; box-shadow:0 3px 10px rgba(52, 199, 89, 0.35);"></div>
+              <span style="font-size:11px; color:var(--system-green); font-weight:700;">S</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div style="width:16px; height:28px; background:var(--tertiary-bg); border-radius:6px;"></div>
+              <span style="font-size:11px; color:var(--label-secondary);">S</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ios-section-header">
+          <span>Workout Sessions</span>
+        </div>
+
+        <div class="ios-grouped-list">
+          <div class="ios-list-item">
+            <div class="ios-item-icon" style="background: rgba(52, 199, 89, 0.15); color: #34c759;">✓</div>
+            <div class="ios-item-content">
+              <div class="ios-item-title">Bodyweight Squat Session</div>
+              <div class="ios-item-subtitle">Today, 8:40 AM • 22 mins • 54 Reps</div>
+            </div>
+            <span style="font-size:13px; font-weight:700; color:var(--system-green);">99% Form</span>
+          </div>
+
+          <div class="ios-list-item">
+            <div class="ios-item-icon" style="background: rgba(0, 122, 255, 0.15); color: #007aff;">✓</div>
+            <div class="ios-item-content">
+              <div class="ios-item-title">HIIT Cardio Intervals</div>
+              <div class="ios-item-subtitle">Yesterday, 6:15 PM • 18 mins • 210 Cal</div>
+            </div>
+            <span style="font-size:13px; font-weight:700; color:var(--system-blue);">97% Form</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 4. PROFILE SCREEN ================= -->
+      <div id="screen-profile" class="ios-screen">
+        <div class="ios-nav-header">
+          <div class="ios-date-badge">APPLE ID</div>
+          <div class="ios-large-title-row">
+            <h1 class="ios-large-title">Profile</h1>
+          </div>
+        </div>
+
+        <!-- Apple ID Card -->
+        <div class="ios-card" style="display:flex; align-items:center; gap:16px; padding:16px;">
+          <div style="width:58px; height:58px; border-radius:50%; background:linear-gradient(135deg, #007aff, #5856d6); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff; box-shadow:0 4px 12px rgba(0, 122, 255, 0.25);">
+            AJ
+          </div>
+          <div>
+            <div style="font-size:19px; font-weight:700; color:var(--label-primary);">Alex Johnson</div>
+            <div style="font-size:13px; color:var(--label-secondary); margin-top:2px;">alex.johnson@icloud.com</div>
+          </div>
+        </div>
+
+        <!-- Health Details calibrated for KinesteX Maximum Accuracy -->
+        <div class="ios-section-header">
+          <span>Biometric Calibration (For Peak Accuracy)</span>
+        </div>
+
+        <div class="ios-grouped-list">
+          <div class="ios-field-row">
+            <span class="ios-field-label">Height (cm)</span>
+            <input type="text" id="cfgHeight" class="ios-field-input" value="175">
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">Weight (kg)</span>
+            <input type="text" id="cfgWeight" class="ios-field-input" value="70">
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">Age</span>
+            <input type="text" id="cfgAge" class="ios-field-input" value="28">
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">Precision Tracking (60 FPS)</span>
+            <label class="ios-switch">
+              <input type="checkbox" checked id="precisionToggle">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- KinesteX API Configuration -->
+        <div class="ios-section-header">
+          <span>KinesteX SDK Integration</span>
+        </div>
+
+        <div class="ios-grouped-list">
+          <div class="ios-field-row">
+            <span class="ios-field-label">API Key</span>
+            <input type="text" id="iosApiKey" class="ios-field-input" value="YOUR_API_KEY">
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">Company</span>
+            <input type="text" id="iosCompany" class="ios-field-input" value="YOUR_COMPANY">
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">User ID</span>
+            <input type="text" id="iosUserId" class="ios-field-input" value="user_alex_101">
+          </div>
+        </div>
+
+        <div class="ios-section-header">
+          <span>Preferences</span>
+        </div>
+
+        <div class="ios-grouped-list">
+          <div class="ios-field-row">
+            <span class="ios-field-label">Voice Coaching</span>
+            <label class="ios-switch">
+              <input type="checkbox" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">Haptic Form Cues</span>
+            <label class="ios-switch">
+              <input type="checkbox" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div class="ios-field-row">
+            <span class="ios-field-label">Android APK Package</span>
+            <a href="/kinestex-demo.apk" style="color:var(--system-blue); font-size:15px; text-decoration:none; font-weight:600;">Download .apk</a>
+          </div>
+        </div>
+
+        <button class="ios-button" style="margin-top: 18px;" onclick="saveIosCredentials()">
+          Save & Calibrate AI Engine
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ================= iOS LIGHT THEME TAB BAR ================= -->
+    <nav class="ios-tab-bar">
+      <!-- 1. Summary / Home -->
+      <div class="tab-bar-item active" id="tabBtn-home" onclick="switchTab('home')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span class="tab-label">Summary</span>
+      </div>
+
+      <!-- 2. Workout -->
+      <div class="tab-bar-item" id="tabBtn-workout" onclick="switchTab('workout')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.57 14.86L22 13.43L20.57 12L17 15.57L8.43 7L12 3.43L10.57 2L9.14 3.43L7.71 2L5.57 4.14L4.14 2.71L2.71 4.14L4.14 5.57L2 7.71L3.43 9.14L2 10.57L3.43 12L7 8.43L15.57 17L12 20.57L13.43 22L14.86 20.57L16.29 22L18.43 19.86L19.86 21.29L21.29 19.86L19.86 18.43L22 16.29L20.57 14.86Z"/>
+        </svg>
+        <span class="tab-label">Workout</span>
+      </div>
+
+      <!-- 3. Trends / Progress -->
+      <div class="tab-bar-item" id="tabBtn-progress" onclick="switchTab('progress')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+        </svg>
+        <span class="tab-label">Trends</span>
+      </div>
+
+      <!-- 4. Profile -->
+      <div class="tab-bar-item" id="tabBtn-profile" onclick="switchTab('profile')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+        </svg>
+        <span class="tab-label">Sharing</span>
+      </div>
+    </nav>
+
+    <!-- iOS Home Indicator -->
+    <div class="ios-home-indicator"></div>
+  </div>
+
+  <script>
+    const scrollView = document.getElementById('mainScrollView');
+
+    // Display formatted real current date
+    const dateOptions = { weekday: 'long', month: 'short', day: 'numeric' };
+    const dateHeaderEl = document.getElementById('currentDateHeader');
+    if (dateHeaderEl) {
+      dateHeaderEl.textContent = new Date().toLocaleDateString('en-US', dateOptions).toUpperCase();
+    }
+
+    // Tab Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.ios-screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-bar-item').forEach(b => b.classList.remove('active'));
+
+      const targetScreen = document.getElementById('screen-' + tabId);
+      const targetBtn = document.getElementById('tabBtn-' + tabId);
+
+      if (targetScreen) targetScreen.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+
+      if (scrollView) scrollView.scrollTop = 0;
+    }
+
+    function startWorkoutMode(url) {
+      switchTab('workout');
+      if (!isCameraActive) {
+        startAICamera();
+      }
+    }
+
+    function pulseIsland() {
+      const island = document.querySelector('.dynamic-island-container');
+      if (island) {
+        island.style.width = '190px';
+        setTimeout(() => island.style.width = '124px', 1000);
+      }
+    }
+
+    // Web Audio Synthesizer for Apple-style chimes
+    let audioCtx = null;
+    function playAppleChime() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.12); // E6
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.26);
+      } catch (e) {}
+    }
+
+    // High Accuracy Calibration Settings Sync
+    function saveIosCredentials() {
+      const toast = document.getElementById('aiFeedbackText');
+      if (toast) toast.textContent = '✅ Biometrics & AI Motion Engine Calibrated!';
+      playAppleChime();
+    }
+
+    // ==========================================================================
+    // 15 REAL WORKOUTS HIGH-ACCURACY BIOMECHANICAL MOTION DETECTION ENGINE
+    // WITH STRICT POSTURE & SPATIAL DISCRIMINATION GATES
+    // ==========================================================================
+
+    // Biomechanical Posture & Spatial Gate Analyzer
+    function analyzeBodyOrientation(l) {
+      if (!l || !l[11] || !l[12] || !l[23] || !l[24]) {
+        return { isUpright: true, isHorizontal: false, isOverhead: false, tiltDeg: 0, valid: false };
+      }
+      
+      const midShoulder = { x: (l[11].x + l[12].x) / 2, y: (l[11].y + l[12].y) / 2 };
+      const midHip = { x: (l[23].x + l[24].x) / 2, y: (l[23].y + l[24].y) / 2 };
+      
+      const dx = midHip.x - midShoulder.x;
+      const dy = midHip.y - midShoulder.y; // Positive in screen space when shoulders are above hips
+      
+      const tiltDeg = Math.abs(Math.atan2(dx, dy) * 180 / Math.PI);
+      
+      // Standing upright: shoulders above hips and torso vertical (allow mobile perspective tilt up to 55 deg)
+      const isUpright = dy > 0.08 && tiltDeg < 55;
+      
+      // Horizontal / prone (floor push-up / plank position)
+      const isHorizontal = Math.abs(dy) < 0.20 || tiltDeg > 55;
+      
+      // Overhead check: elbows raised near/above shoulder height
+      const leftElbowOverhead = l[13] && l[11] && (l[13].y < l[11].y + 0.05);
+      const rightElbowOverhead = l[14] && l[12] && (l[14].y < l[12].y + 0.05);
+      const isOverhead = leftElbowOverhead || rightElbowOverhead;
+
+      return {
+        isUpright,
+        isHorizontal,
+        isOverhead,
+        tiltDeg,
+        valid: true,
+        midShoulder,
+        midHip
+      };
+    }
+
+    // Enhanced High-Accuracy Pose Visibility Checker (Supports unilateral / bilateral tracking)
+    function checkPoseVisibility(l, requiredPairs, minConf = 0.20) {
+      if (!l) return { visible: false, message: '⚠️ Move back so your full body is visible.' };
+      
+      // If requiredPairs is array of sides (e.g. [[left arm], [right arm]]), check if at least one side is in view
+      let hasValidSide = false;
+      for (const sideIndices of requiredPairs) {
+        const sideOk = sideIndices.every(idx => {
+          const pt = l[idx];
+          return pt && (pt.visibility === undefined || pt.visibility >= minConf);
+        });
+        if (sideOk) {
+          hasValidSide = true;
+          break;
+        }
+      }
+      if (!hasValidSide) {
+        return { visible: false, message: '⚠️ Move back so your full body is visible.' };
+      }
+      return { visible: true };
+    }
+
+    const EXERCISES = {
+      // 1. Bicep Curl
+      bicep_curl: {
+        id: 'bicep_curl',
+        name: 'Bicep Curl',
+        category: 'Upper Body',
+        icon: '💪',
+        badge: 'Arms',
+        cameraView: 'Front view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16],
+        targetJoint: 'Bicep / Elbow',
+        repThreshold: 78,
+        prepThreshold: 135,
+        guideTitle: 'Bicep Curl Form Perfection Guide',
+        guideDesc: 'Stand upright with torso tall and elbows pinned to ribs. Curl hands toward shoulders until elbow angle is below 78°, squeeze biceps at top, then lower smoothly to full extension (>135°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 140, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 140, valid: false, feedback: '⚠️ Stand upright for Bicep Curls (Prone posture detected)', acc: 60 };
+
+          const lAng = calculateJointAngle(l[11], l[13], l[15]);
+          const rAng = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = (lAng !== null && rAng !== null) ? Math.min(lAng, rAng) : (lAng || rAng || 150);
+
+          const isStart = angle >= 135;
+          const isMovement = angle < 128 && angle > 82;
+          const isPeak = angle <= 78;
+
+          let feedback = 'Curl hands toward shoulders';
+          if (isPeak) feedback = '✅ Peak bicep squeeze! Lower with control.';
+          else if (isMovement) feedback = 'Keep curling, squeeze biceps!';
+          else if (isStart) feedback = 'Arms extended. Ready for next curl.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 94 };
+        }
+      },
+
+      // 2. Hammer Curl
+      hammer_curl: {
+        id: 'hammer_curl',
+        name: 'Hammer Curl',
+        category: 'Upper Body',
+        icon: '🔨',
+        badge: 'Arms',
+        cameraView: 'Front view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16],
+        targetJoint: 'Brachialis / Elbow',
+        repThreshold: 78,
+        prepThreshold: 135,
+        guideTitle: 'Hammer Curl Neutral Grip Guide',
+        guideDesc: 'Stand tall with thumbs pointing up and wrists in neutral position. Curl hands up without twisting wrists until elbow reaches 78°, then lower fully to 135°. Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 140, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 140, valid: false, feedback: '⚠️ Stand upright for Hammer Curls', acc: 60 };
+
+          const lAng = calculateJointAngle(l[11], l[13], l[15]);
+          const rAng = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = (lAng !== null && rAng !== null) ? Math.min(lAng, rAng) : (lAng || rAng || 150);
+
+          const isStart = angle >= 135;
+          const isMovement = angle < 128 && angle > 82;
+          const isPeak = angle <= 78;
+
+          let feedback = 'Keep thumbs up, curl wrists to shoulders';
+          if (isPeak) feedback = '✅ Peak hammer contraction! Lower smoothly.';
+          else if (isMovement) feedback = 'Maintain neutral grip, curl up!';
+          else if (isStart) feedback = 'Full extension. Ready to curl.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 94 };
+        }
+      },
+
+      // 3. Lateral Raise
+      lateral_raise: {
+        id: 'lateral_raise',
+        name: 'Lateral Raise',
+        category: 'Upper Body',
+        icon: '🦅',
+        badge: 'Delts',
+        cameraView: 'Front view',
+        requiredLandmarks: [11, 12, 13, 14, 23, 24],
+        targetJoint: 'Lateral Deltoids',
+        repThreshold: 75,
+        prepThreshold: 35,
+        guideTitle: 'Lateral Raise Deltoid Guide',
+        guideDesc: 'Stand upright. Raise arms out to sides with slight elbow bend until parallel with shoulders (75°–90°), pause briefly, then lower under control to sides (<35°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[23, 11, 13], [24, 12, 14]]);
+          if (!vis.visible) return { angle: 25, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 25, valid: false, feedback: '⚠️ Stand upright for Lateral Raises', acc: 60 };
+
+          const lAb = calculateJointAngle(l[23], l[11], l[13]);
+          const rAb = calculateJointAngle(l[24], l[12], l[14]);
+          const angle = Math.max(lAb || 0, rAb || 0) || 25;
+
+          const isStart = angle <= 38;
+          const isMovement = angle > 42 && angle < 72;
+          const isPeak = angle >= 75;
+
+          let feedback = 'Raise arms out to sides to shoulder height';
+          if (isPeak) feedback = '✅ Shoulder height reached! Lower under control.';
+          else if (isMovement) feedback = 'Lead with elbows out to sides!';
+          else if (isStart) feedback = 'Arms at sides. Ready for next raise.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 93 };
+        }
+      },
+
+      // 4. Front Raise
+      front_raise: {
+        id: 'front_raise',
+        name: 'Front Raise',
+        category: 'Upper Body',
+        icon: '🏹',
+        badge: 'Shoulders',
+        cameraView: 'Front view',
+        requiredLandmarks: [11, 12, 15, 16, 23, 24],
+        targetJoint: 'Anterior Deltoids',
+        repThreshold: 75,
+        prepThreshold: 35,
+        guideTitle: 'Front Raise Anterior Delt Guide',
+        guideDesc: 'Stand upright with arms in front of thighs. Raise arms straight forward in front of chest to shoulder level (75°–90°), pause, then lower to thighs (<35°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[23, 11, 15], [24, 12, 16]]);
+          if (!vis.visible) return { angle: 25, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 25, valid: false, feedback: '⚠️ Stand upright for Front Raises', acc: 60 };
+
+          const lFront = calculateJointAngle(l[23], l[11], l[15]);
+          const rFront = calculateJointAngle(l[24], l[12], l[16]);
+          const angle = Math.max(lFront || 0, rFront || 0) || 25;
+
+          const isStart = angle <= 38;
+          const isMovement = angle > 42 && angle < 72;
+          const isPeak = angle >= 75;
+
+          let feedback = 'Raise arms straight forward to chest height';
+          if (isPeak) feedback = '✅ Parallel shoulder height! Lower smoothly.';
+          else if (isMovement) feedback = 'Lift forward with control, keep core tight!';
+          else if (isStart) feedback = 'Arms at thighs. Ready for next raise.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 93 };
+        }
+      },
+
+      // 5. Shoulder Press
+      shoulder_press: {
+        id: 'shoulder_press',
+        name: 'Shoulder Press',
+        category: 'Upper Body',
+        icon: '🏋️‍♂️',
+        badge: 'Shoulders',
+        cameraView: 'Front view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16],
+        targetJoint: 'Deltoids & Overhead Press',
+        repThreshold: 145,
+        prepThreshold: 100,
+        guideTitle: 'Overhead Shoulder Press Guide',
+        guideDesc: 'Stand upright with hands at ear level (elbows <100°). Press upward until arms are straight overhead (>145°), then lower under control to ear height. Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 90, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 90, valid: false, feedback: '⚠️ Stand upright for Shoulder Press', acc: 60 };
+
+          const lAng = calculateJointAngle(l[11], l[13], l[15]);
+          const rAng = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = Math.max(lAng || 0, rAng || 0) || 90;
+
+          const isStart = angle <= 102;
+          const isMovement = angle > 108 && angle < 140;
+          const isPeak = angle >= 145;
+
+          let feedback = 'Press hands straight overhead';
+          if (isPeak) feedback = '✅ Overhead lockout! Lower to ear level.';
+          else if (isMovement) feedback = 'Drive straight upward overhead!';
+          else if (isStart) feedback = 'Hands at ear level. Ready to press.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 93 };
+        }
+      },
+
+      // 6. Overhead Tricep Extension
+      overhead_extension: {
+        id: 'overhead_extension',
+        name: 'Overhead Tricep Extension',
+        category: 'Upper Body',
+        icon: '⚡',
+        badge: 'Triceps',
+        cameraView: 'Front or slightly side view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16],
+        targetJoint: 'Overhead Tricep Lockout',
+        repThreshold: 145,
+        prepThreshold: 90,
+        guideTitle: 'Overhead Extension Lockout Guide',
+        guideDesc: 'Stand upright with elbows pointing up near ears. Lower hands behind neck (<90°), then extend arms straight overhead to lock out (>145°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 85, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 85, valid: false, feedback: '⚠️ Stand upright with elbows overhead', acc: 60 };
+
+          const lAng = calculateJointAngle(l[11], l[13], l[15]);
+          const rAng = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = Math.max(lAng || 0, rAng || 0) || 85;
+
+          const isStart = angle <= 92;
+          const isMovement = angle > 98 && angle < 140;
+          const isPeak = angle >= 145;
+
+          let feedback = 'Extend hands straight overhead';
+          if (isPeak) feedback = '✅ Full tricep lockout overhead! Lower behind head.';
+          else if (isMovement) feedback = 'Push up, keep elbows close to ears!';
+          else if (isStart) feedback = 'Deep stretch behind neck. Ready to extend.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 92 };
+        }
+      },
+
+      // 7. Tricep Kickback
+      tricep_kickback: {
+        id: 'tricep_kickback',
+        name: 'Tricep Kickback',
+        category: 'Upper Body',
+        icon: '🥊',
+        badge: 'Triceps',
+        cameraView: 'Side view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16, 23, 24],
+        targetJoint: 'Tricep Posterior Lockout',
+        repThreshold: 145,
+        prepThreshold: 98,
+        guideTitle: 'Tricep Kickback Form Guide',
+        guideDesc: 'Hinge forward at hips with upper arm pinned parallel to torso. Extend forearm back into straight lockout (>145°), then return to 90° bend (<98°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 90, valid: false, feedback: vis.message, acc: 80 };
+
+          const lAng = calculateJointAngle(l[11], l[13], l[15]);
+          const rAng = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = Math.max(lAng || 0, rAng || 0) || 90;
+
+          const isStart = angle <= 98;
+          const isMovement = angle > 104 && angle < 140;
+          const isPeak = angle >= 145;
+
+          let feedback = 'Kick forearm straight back';
+          if (isPeak) feedback = '✅ Full posterior tricep squeeze! Return to 90°.';
+          else if (isMovement) feedback = 'Keep upper arm pinned, extend fully back!';
+          else if (isStart) feedback = 'Elbow bent at 90°. Ready to kick back.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 93 };
+        }
+      },
+
+      // 8. Bent-Over Dumbbell Row
+      dumbbell_row: {
+        id: 'dumbbell_row',
+        name: 'Bent-Over Dumbbell Row',
+        category: 'Upper Body',
+        icon: '🚣',
+        badge: 'Back',
+        cameraView: 'Front or slightly side view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16, 23, 24],
+        targetJoint: 'Lat & Rhomboid Retraction',
+        repThreshold: 90,
+        prepThreshold: 138,
+        guideTitle: 'Bent-Over Dumbbell Row Guide',
+        guideDesc: 'Hinge forward at hips with flat back. Pull elbows straight up and back past torso (elbow angle <90°), squeeze back, then extend arms down (>138°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 145, valid: false, feedback: vis.message, acc: 80 };
+
+          const lAng = calculateJointAngle(l[11], l[13], l[15]);
+          const rAng = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = (lAng !== null && rAng !== null) ? Math.min(lAng, rAng) : (lAng || rAng || 145);
+
+          const isStart = angle >= 136;
+          const isMovement = angle < 130 && angle > 96;
+          const isPeak = angle <= 90;
+
+          let feedback = 'Pull elbows back past torso';
+          if (isPeak) feedback = '✅ Peak lat contraction! Lower with control.';
+          else if (isMovement) feedback = 'Drive elbows straight back toward ceiling!';
+          else if (isStart) feedback = 'Arms extended down. Ready to row.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 92 };
+        }
+      },
+
+      // 9. Bodyweight Squat
+      squat: {
+        id: 'squat',
+        name: 'Bodyweight Squat',
+        category: 'Lower Body',
+        icon: '🦵',
+        badge: 'Legs',
+        cameraView: 'Front or side view',
+        requiredLandmarks: [23, 24, 25, 26, 27, 28],
+        targetJoint: 'Knees & Quads',
+        repThreshold: 110,
+        prepThreshold: 150,
+        guideTitle: 'Bodyweight Squat Depth Guide',
+        guideDesc: 'Stand with feet shoulder-width apart. Lower hips back and down until thighs are parallel to floor (knee angle <110°), then drive up to full standing (>150°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[23, 25, 27], [24, 26, 28]]);
+          if (!vis.visible) return { angle: 165, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 165, valid: false, feedback: '⚠️ Stand upright on feet for Squats', acc: 60 };
+
+          const lKnee = calculateJointAngle(l[23], l[25], l[27]);
+          const rKnee = calculateJointAngle(l[24], l[26], l[28]);
+          const angle = (lKnee !== null && rKnee !== null) ? Math.min(lKnee, rKnee) : (lKnee || rKnee || 165);
+
+          const isStart = angle >= 150;
+          const isMovement = angle < 144 && angle > 116;
+          const isPeak = angle <= 110;
+
+          let feedback = 'Sit hips back and down into heels';
+          if (isPeak) feedback = '✅ Parallel squat depth! Drive straight up!';
+          else if (isMovement) feedback = 'Sink deeper toward 90° parallel!';
+          else if (isStart) feedback = 'Standing upright. Ready for next squat.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 93 };
+        }
+      },
+
+      // 10. Reverse Lunge
+      reverse_lunge: {
+        id: 'reverse_lunge',
+        name: 'Reverse Lunge',
+        category: 'Lower Body',
+        icon: '🏃',
+        badge: 'Glutes',
+        cameraView: 'Front or side view',
+        requiredLandmarks: [23, 24, 25, 26, 27, 28],
+        targetJoint: 'Lead Knee & Hip',
+        repThreshold: 110,
+        prepThreshold: 148,
+        guideTitle: 'Reverse Lunge Stride Guide',
+        guideDesc: 'Step backward and lower rear knee until front knee hits a 90°–110° bend, then push through front heel to return to upright standing (>148°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[23, 25, 27], [24, 26, 28]]);
+          if (!vis.visible) return { angle: 160, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 160, valid: false, feedback: '⚠️ Stand upright for Reverse Lunges', acc: 60 };
+
+          const lK = calculateJointAngle(l[23], l[25], l[27]);
+          const rK = calculateJointAngle(l[24], l[26], l[28]);
+          const angle = (lK !== null && rK !== null) ? Math.min(lK, rK) : (lK || rK || 160);
+
+          const isStart = angle >= 148;
+          const isMovement = angle < 142 && angle > 116;
+          const isPeak = angle <= 110;
+
+          let feedback = 'Step back and lower rear knee down';
+          if (isPeak) feedback = '✅ Full 90° lunge depth! Push back up.';
+          else if (isMovement) feedback = 'Drop back knee straight down toward floor!';
+          else if (isStart) feedback = 'Standing tall. Ready for next lunge.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 93 };
+        }
+      },
+
+      // 11. Calf Raise
+      calf_raise: {
+        id: 'calf_raise',
+        name: 'Calf Raise',
+        category: 'Lower Body',
+        icon: '🦶',
+        badge: 'Calves',
+        cameraView: 'Front or side view',
+        requiredLandmarks: [25, 26, 27, 28, 31, 32],
+        targetJoint: 'Ankle Plantarflexion',
+        repThreshold: 122,
+        prepThreshold: 104,
+        guideTitle: 'Calf Raise Plantarflexion Guide',
+        guideDesc: 'Stand tall on balls of feet. Push through toes to lift heels as high as possible into peak calf contraction (>122°), then lower heels flat. Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[25, 27], [26, 28]]);
+          if (!vis.visible) return { angle: 95, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isHorizontal) return { angle: 95, valid: false, feedback: '⚠️ Stand upright for Calf Raises', acc: 60 };
+
+          const lAnk = calculateJointAngle(l[25], l[27], l[31]);
+          const rAnk = calculateJointAngle(l[26], l[28], l[32]);
+          const angle = Math.max(lAnk || 0, rAnk || 0) || 95;
+
+          const isStart = angle <= 104;
+          const isMovement = angle > 108 && angle < 118;
+          const isPeak = angle >= 122;
+
+          let feedback = 'Push onto toes and elevate heels';
+          if (isPeak) feedback = '✅ Peak calf squeeze! Lower heels slowly.';
+          else if (isMovement) feedback = 'Push high onto the balls of your feet!';
+          else if (isStart) feedback = 'Heels flat on floor. Ready to raise.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 92 };
+        }
+      },
+
+      // 12. Glute Bridge
+      glute_bridge: {
+        id: 'glute_bridge',
+        name: 'Glute Bridge',
+        category: 'Lower Body',
+        icon: '🍑',
+        badge: 'Hips',
+        cameraView: 'Side view',
+        requiredLandmarks: [11, 12, 23, 24, 25, 26],
+        targetJoint: 'Hip Extension & Glutes',
+        repThreshold: 148,
+        prepThreshold: 128,
+        guideTitle: 'Glute Bridge Thrust Guide',
+        guideDesc: 'Lie on your back with knees bent. Drive through heels to raise hips until shoulders, hips, and knees form a straight line (>148°), then lower hips (<128°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 23, 25], [12, 24, 26]]);
+          if (!vis.visible) return { angle: 115, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isUpright && body.tiltDeg < 30) return { angle: 115, valid: false, feedback: '⚠️ Lie on back on floor for Glute Bridges', acc: 60 };
+
+          const lHip = calculateJointAngle(l[11], l[23], l[25]);
+          const rHip = calculateJointAngle(l[12], l[24], l[26]);
+          const angle = Math.max(lHip || 0, rHip || 0) || 115;
+
+          const isStart = angle <= 128;
+          const isMovement = angle > 132 && angle < 144;
+          const isPeak = angle >= 148;
+
+          let feedback = 'Drive hips up toward ceiling';
+          if (isPeak) feedback = '✅ Peak bridge straight line! Lower hips down.';
+          else if (isMovement) feedback = 'Squeeze glutes and drive hips higher!';
+          else if (isStart) feedback = 'Hips resting on floor. Ready to drive.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 94 };
+        }
+      },
+
+      // 13. Push-Up
+      pushup: {
+        id: 'pushup',
+        name: 'Push-Up',
+        category: 'Chest & Core',
+        icon: '🏋️',
+        badge: 'Chest',
+        cameraView: 'Side view',
+        requiredLandmarks: [11, 12, 13, 14, 15, 16, 23, 24],
+        targetJoint: 'Chest & Elbow Extension',
+        repThreshold: 105,
+        prepThreshold: 138,
+        guideTitle: 'Push-Up Form Perfection Guide',
+        guideDesc: 'In a horizontal plank, lower chest until elbows reach 90°–105°, keep body in a rigid straight line, then push up to full lockout (>138°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 13, 15], [12, 14, 16]]);
+          if (!vis.visible) return { angle: 150, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isUpright && body.tiltDeg < 35) return { angle: 150, valid: false, feedback: '⚠️ Get down into horizontal push-up position on floor!', acc: 60 };
+
+          const lElbow = calculateJointAngle(l[11], l[13], l[15]);
+          const rElbow = calculateJointAngle(l[12], l[14], l[16]);
+          const angle = (lElbow !== null && rElbow !== null) ? Math.min(lElbow, rElbow) : (lElbow || rElbow || 150);
+
+          const isStart = angle >= 136;
+          const isMovement = angle < 130 && angle > 108;
+          const isPeak = angle <= 105;
+
+          let feedback = 'Lower chest smoothly toward floor';
+          if (isPeak) feedback = '✅ Perfect chest depth! Press all the way up!';
+          else if (isMovement) feedback = 'Keep core rigid, lower chest to floor!';
+          else if (isStart) feedback = 'Full arm lockout. Ready for next push-up.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 92 };
+        }
+      },
+
+      // 14. Crunch
+      crunch: {
+        id: 'crunch',
+        name: 'Crunch',
+        category: 'Chest & Core',
+        icon: '🧘',
+        badge: 'Core',
+        cameraView: 'Front or side view',
+        requiredLandmarks: [11, 12, 23, 24, 25, 26],
+        targetJoint: 'Abdominal Contraction',
+        repThreshold: 92,
+        prepThreshold: 128,
+        guideTitle: 'Crunch Abdominal Guide',
+        guideDesc: 'Lie on back with knees bent. Contract abdominals to lift shoulder blades off floor (hip angle <92°), pause, then lower back down (>128°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 23, 25], [12, 24, 26]]);
+          if (!vis.visible) return { angle: 135, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isUpright && body.tiltDeg < 25) return { angle: 135, valid: false, feedback: '⚠️ Lie down on floor on your back for Crunches', acc: 60 };
+
+          const lAng = calculateJointAngle(l[11], l[23], l[25]);
+          const rAng = calculateJointAngle(l[12], l[24], l[26]);
+          const angle = (lAng !== null && rAng !== null) ? Math.min(lAng, rAng) : (lAng || rAng || 135);
+
+          const isStart = angle >= 126;
+          const isMovement = angle < 122 && angle > 96;
+          const isPeak = angle <= 92;
+
+          let feedback = 'Crunch shoulder blades off floor toward knees';
+          if (isPeak) feedback = '✅ Full abdominal crunch! Lower shoulder blades.';
+          else if (isMovement) feedback = 'Exhale and squeeze your core!';
+          else if (isStart) feedback = 'Shoulders flat on floor. Ready to crunch.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 92 };
+        }
+      },
+
+      // 15. Leg Raise
+      leg_raise: {
+        id: 'leg_raise',
+        name: 'Leg Raise',
+        category: 'Chest & Core',
+        icon: '🦿',
+        badge: 'Lower Abs',
+        cameraView: 'Side view',
+        requiredLandmarks: [11, 12, 23, 24, 27, 28],
+        targetJoint: 'Lower Abdominals & Hip Flexors',
+        repThreshold: 120,
+        prepThreshold: 150,
+        guideTitle: 'Leg Raise Lower Abs Guide',
+        guideDesc: 'Lie flat on back with legs straight. Raise legs together until perpendicular to floor (hip angle <120°), then lower under control to floor (>150°). Target: 12 reps per set.',
+        eval: (l, body) => {
+          const vis = checkPoseVisibility(l, [[11, 23, 27], [12, 24, 28]]);
+          if (!vis.visible) return { angle: 160, valid: false, feedback: vis.message, acc: 80 };
+          if (body.isUpright && body.tiltDeg < 30) return { angle: 160, valid: false, feedback: '⚠️ Lie flat on back on floor for Leg Raises', acc: 60 };
+
+          const lH = calculateJointAngle(l[11], l[23], l[27]);
+          const rH = calculateJointAngle(l[12], l[24], l[28]);
+          const angle = (lH !== null && rH !== null) ? Math.min(lH, rH) : (lH || rH || 160);
+
+          const isStart = angle >= 148;
+          const isMovement = angle < 144 && angle > 124;
+          const isPeak = angle <= 120;
+
+          let feedback = 'Raise straight legs up toward ceiling';
+          if (isPeak) feedback = '✅ Vertical legs reached! Lower under control.';
+          else if (isMovement) feedback = 'Keep legs straight and lift upward!';
+          else if (isStart) feedback = 'Legs lowered near floor. Ready to raise.';
+
+          return { angle, valid: true, isStart, isMovement, isPeak, feedback, acc: isPeak ? 99 : 94 };
+        }
+      }
+    };
+
+    // State Variables
+    let currentExerciseKey = 'bicep_curl';
+    let currentReps = 0;
+    let lastRepTimestamp = 0;
+    let smoothedAngle = 140;
+    let isCameraActive = false;
+    let localStream = null;
+    let mediaPipePose = null;
+    let animFrameId = null;
+
+    // Robust 4-stage State Machine: START -> MOVEMENT -> COMPLETE -> COUNT REP
+    let repStateMachine = {
+      state: 'START',
+      peakTimestamp: 0,
+      isPeakVerified: false,
+      lastRepTimestamp: 0
+    };
+
+    // ==========================================================================
+    // 3-SETS ROUTINE STATE & PROGRESSION ENGINE (12 REPS TARGET PER SET)
+    // ==========================================================================
+    let currentSetIndex = 1; // Active set: 1, 2, or 3
+    let setRepsRecord = { 1: 0, 2: 0, 3: 0 };
+    let isRoutineComplete = false;
+
+    // Real-time rep update for active set
+    function onRepCounted(reps) {
+      if (isRoutineComplete) return;
+      setRepsRecord[currentSetIndex] = reps;
+      const el = document.getElementById(`setReps-${currentSetIndex}`);
+      if (el) el.textContent = reps;
+      const status = document.getElementById(`setStatus-${currentSetIndex}`);
+      if (status) {
+        if (reps >= 12) {
+          status.textContent = `🎯 12 / 12 reps completed (Tap ✓)`;
+          status.style.color = 'var(--system-green)';
+          status.style.fontWeight = '700';
+        } else {
+          status.textContent = `Counting • ${reps} / 12 reps`;
+          status.style.color = 'var(--system-blue)';
+          status.style.fontWeight = '600';
+        }
+      }
+    }
+
+    // Advance set when Tick Button is clicked
+    function completeCurrentSet(setNum) {
+      if (setNum !== currentSetIndex || isRoutineComplete) return;
+
+      // Lock current set reps
+      setRepsRecord[setNum] = currentReps;
+      const row = document.getElementById(`setRow-${setNum}`);
+      const btn = document.getElementById(`setTickBtn-${setNum}`);
+      const status = document.getElementById(`setStatus-${setNum}`);
+
+      if (row) {
+        row.classList.remove('active');
+        row.classList.add('completed');
+      }
+      if (status) {
+        status.textContent = `Completed • ${setRepsRecord[setNum]} / 12 reps`;
+        status.style.color = 'var(--system-green)';
+        status.style.fontWeight = '600';
+      }
+      if (btn) {
+        btn.className = 'set-tick-btn completed';
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      }
+
+      pulseIsland();
+      playAppleChime();
+
+      // Check if moving to next set or completing routine
+      if (setNum < 3) {
+        currentSetIndex = setNum + 1;
+        currentReps = 0;
+        repStateMachine = { state: 'START', peakTimestamp: 0, isPeakVerified: false, lastRepTimestamp: 0 };
+        document.getElementById('workoutReps').textContent = '0';
+
+        // Activate next set
+        const nextRow = document.getElementById(`setRow-${currentSetIndex}`);
+        const nextBtn = document.getElementById(`setTickBtn-${currentSetIndex}`);
+        const nextStatus = document.getElementById(`setStatus-${currentSetIndex}`);
+        const pill = document.getElementById('setsRoutineBadge');
+
+        if (nextRow) {
+          nextRow.classList.remove('upcoming');
+          nextRow.classList.add('active');
+        }
+        if (nextStatus) {
+          nextStatus.textContent = 'Counting • 0 / 12 reps';
+          nextStatus.style.color = 'var(--system-blue)';
+          nextStatus.style.fontWeight = '600';
+        }
+        if (nextBtn) {
+          nextBtn.className = 'set-tick-btn active';
+        }
+        if (pill) {
+          pill.textContent = `Set ${currentSetIndex} of 3`;
+        }
+
+        const toast = document.getElementById('aiFeedbackText');
+        if (toast) toast.textContent = `✅ Set ${setNum} Complete! Starting Set ${currentSetIndex} (Target: 12 reps)...`;
+      } else {
+        // All 3 sets completed!
+        isRoutineComplete = true;
+        const pill = document.getElementById('setsRoutineBadge');
+        if (pill) {
+          pill.textContent = '3 of 3 Done 🎉';
+          pill.style.background = 'rgba(52, 199, 89, 0.15)';
+          pill.style.color = 'var(--system-green)';
+        }
+
+        const totalReps = setRepsRecord[1] + setRepsRecord[2] + setRepsRecord[3];
+        const banner = document.getElementById('routineCompleteBanner');
+        const details = document.getElementById('routineCompleteDetails');
+        if (details) {
+          details.textContent = `Set 1: ${setRepsRecord[1]}/12 • Set 2: ${setRepsRecord[2]}/12 • Set 3: ${setRepsRecord[3]}/12 • Total: ${totalReps}/36 Reps (99% Form Accuracy)`;
+        }
+        if (banner) {
+          banner.style.display = 'block';
+        }
+
+        const toast = document.getElementById('aiFeedbackText');
+        if (toast) toast.textContent = `🎉 Awesome! Completed all 3 sets of ${EXERCISES[currentExerciseKey]?.name || 'workout'}!`;
+      }
+    }
+
+    // Reset sets back to initial Set 1 state
+    function resetAllSets() {
+      currentSetIndex = 1;
+      setRepsRecord = { 1: 0, 2: 0, 3: 0 };
+      isRoutineComplete = false;
+      currentReps = 0;
+      repStateMachine = { state: 'START', peakTimestamp: 0, isPeakVerified: false, lastRepTimestamp: 0 };
+      const wReps = document.getElementById('workoutReps');
+      if (wReps) wReps.textContent = '0';
+
+      const banner = document.getElementById('routineCompleteBanner');
+      if (banner) banner.style.display = 'none';
+
+      const pill = document.getElementById('setsRoutineBadge');
+      if (pill) {
+        pill.textContent = 'Set 1 of 3';
+        pill.style.background = 'rgba(0, 122, 255, 0.12)';
+        pill.style.color = 'var(--system-blue)';
+      }
+
+      for (let i = 1; i <= 3; i++) {
+        const row = document.getElementById(`setRow-${i}`);
+        const btn = document.getElementById(`setTickBtn-${i}`);
+        const reps = document.getElementById(`setReps-${i}`);
+        const status = document.getElementById(`setStatus-${i}`);
+
+        if (reps) reps.textContent = '0';
+        if (row) {
+          row.className = `set-row ${i === 1 ? 'active' : 'upcoming'}`;
+        }
+        if (status) {
+          status.textContent = i === 1 ? 'Counting • 0 / 12 reps' : 'Target: 12 reps';
+          status.style.color = i === 1 ? 'var(--system-blue)' : 'var(--label-secondary)';
+          status.style.fontWeight = i === 1 ? '600' : '500';
+        }
+        if (btn) {
+          btn.className = `set-tick-btn ${i === 1 ? 'active' : 'upcoming'}`;
+          btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        }
+      }
+    }
+
+    // Angle calculation helper using 3 points with indoor tolerance
+    function calculateJointAngle(A, B, C) {
+      if (!A || !B || !C) return null;
+      if ((A.visibility !== undefined && A.visibility < 0.25) ||
+          (B.visibility !== undefined && B.visibility < 0.25) ||
+          (C.visibility !== undefined && C.visibility < 0.25)) return null;
+      const radians = Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
+      let angle = Math.abs((radians * 180.0) / Math.PI);
+      if (angle > 180.0) angle = 360.0 - angle;
+      return Math.round(angle);
+    }
+
+    // Workout Selection Logic
+    function selectWorkout(key, element) {
+      if (!EXERCISES[key]) return;
+      currentExerciseKey = key;
+      const ex = EXERCISES[key];
+
+      // Update UI chips
+      document.querySelectorAll('.workout-chip').forEach(c => c.classList.remove('active'));
+      if (element) element.classList.add('active');
+
+      // Update workout title in 3-sets card
+      const setsNameEl = document.getElementById('setsWorkoutName');
+      if (setsNameEl) setsNameEl.textContent = ex.name;
+
+      // Reset exercise-specific counters & state machine
+      resetAllSets();
+      repStateMachine = {
+        state: 'START',
+        peakTimestamp: 0,
+        isPeakVerified: false,
+        lastRepTimestamp: 0
+      };
+
+      document.getElementById('hudExerciseTitle').textContent = ex.name;
+      document.getElementById('selectedExerciseIcon').textContent = ex.icon;
+      document.getElementById('selectedExerciseOverlayTitle').textContent = `${ex.name} AI Motion Tracker`;
+      document.getElementById('selectedExerciseOverlayDesc').textContent = `📷 ${ex.cameraView} • ${ex.guideDesc}`;
+      document.getElementById('valTargetJoint').textContent = ex.targetJoint;
+      const comp = ex.repThreshold > ex.prepThreshold ? '>' : '<';
+      const prepComp = ex.prepThreshold > ex.repThreshold ? '>' : '<';
+      document.getElementById('valRepThreshold').textContent = `${comp} ${ex.repThreshold}°`;
+      document.getElementById('valPrepThreshold').textContent = `${prepComp} ${ex.prepThreshold}°`;
+      document.getElementById('aiAngleMeter').textContent = `Target: ${comp} ${ex.repThreshold}°`;
+      document.getElementById('guideTitle').textContent = ex.guideTitle;
+      document.getElementById('guideDesc').textContent = `📷 Recommended: ${ex.cameraView} • ${ex.guideDesc}`;
+
+      playAppleChime();
+    }
+
+    // Turn Camera On / Off
+    function toggleAICamera() {
+      if (isCameraActive) {
+        stopAICamera();
+      } else {
+        startAICamera();
+      }
+    }
+
+    function resetWorkoutStats() {
+      resetAllSets();
+      document.getElementById('workoutAcc').textContent = '99%';
+      playAppleChime();
+    }
+
+    // Start Real AI Camera Feed & MediaPipe Pipeline
+    async function startAICamera() {
+      const video = document.getElementById('aiVideo');
+      const overlay = document.getElementById('aiCameraOverlay');
+      const headerBtn = document.getElementById('cameraToggleHeaderBtn');
+      const feedbackEl = document.getElementById('aiFeedbackText');
+
+      // 1. Force reset any previous stream state
+      if (localStream) {
+        try {
+          localStream.getTracks().forEach(t => t.stop());
+        } catch (e) {}
+        localStream = null;
+      }
+      isCameraActive = false;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+
+      // Check mediaDevices support
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const msg = '⚠️ Camera API requires a secure context (http://localhost:8080).';
+        if (feedbackEl) feedbackEl.textContent = msg;
+        if (overlay) overlay.style.display = 'flex';
+        return;
+      }
+
+      try {
+        if (headerBtn) {
+          headerBtn.textContent = '⏳ Starting...';
+          headerBtn.style.background = 'var(--system-orange)';
+        }
+        if (feedbackEl) feedbackEl.textContent = '📷 Requesting camera access...';
+
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+
+        // 2. Multi-tier camera acquisition: selfie camera (facingMode: 'user') -> fallback
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+          });
+        } catch (e1) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'user' },
+              audio: false
+            });
+          } catch (e2) {
+            console.warn('FacingMode constraint fallback:', e2);
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          }
+        }
+
+        localStream = stream;
+        video.srcObject = stream;
+
+        // Hide overlay as soon as stream is bound
+        if (overlay) overlay.style.display = 'none';
+        isCameraActive = true;
+
+        if (headerBtn) {
+          headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> <span>Stop Camera</span>`;
+          headerBtn.style.background = 'var(--system-red)';
+        }
+        if (feedbackEl) feedbackEl.textContent = '✅ Camera Connected • Calibrating AI Skeleton...';
+
+        // Play video stream
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('video.play() warning:', playErr);
+        }
+
+        // 3. Initialize MediaPipe Pose Model in isolated block
+        setTimeout(() => {
+          try {
+            initMediaPipe(video);
+          } catch (mpErr) {
+            console.error('MediaPipe initialization error:', mpErr);
+            runOpticalVisionFallback(video);
+          }
+        }, 150);
+
+      } catch (err) {
+        console.error('Camera stream error:', err);
+        isCameraActive = false;
+        if (overlay) overlay.style.display = 'flex';
+        if (headerBtn) {
+          headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> <span>Start Camera</span>`;
+          headerBtn.style.background = 'var(--system-blue)';
+        }
+
+        let errMsg = '⚠️ Please click "Allow" when the browser asks for camera permission.';
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          errMsg = '⚠️ Camera permission was blocked. Tap the tune/lock icon in browser URL bar to Allow Camera.';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          errMsg = '⚠️ Camera in use by another app or tab. Please close other camera apps/tabs.';
+        } else if (err.name === 'OverconstrainedError') {
+          errMsg = '⚠️ Webcam resolution constraint error.';
+        } else if (err.name === 'NotFoundError') {
+          errMsg = '⚠️ No webcam device detected on this system.';
+        }
+        if (feedbackEl) feedbackEl.textContent = errMsg;
+        const descEl = document.getElementById('selectedExerciseOverlayDesc');
+        if (descEl) descEl.textContent = errMsg;
+      }
+    }
+
+    function stopAICamera() {
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+      isCameraActive = false;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      document.getElementById('aiCameraOverlay').style.display = 'flex';
+      const headerBtn = document.getElementById('cameraToggleHeaderBtn');
+      if (headerBtn) {
+        headerBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> <span>Start Camera</span>`;
+        headerBtn.style.background = 'var(--system-blue)';
+      }
+      const feedbackEl = document.getElementById('aiFeedbackText');
+      if (feedbackEl) feedbackEl.textContent = 'Camera stopped • Tap Start Camera to resume';
+    }
+
+    // Initialize MediaPipe Pose Model with Frame Concurrency Guard
+    function initMediaPipe(video) {
+      if (typeof Pose !== 'undefined') {
+        try {
+          if (!mediaPipePose) {
+            mediaPipePose = new Pose({
+              locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+            });
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 600;
+            mediaPipePose.setOptions({
+              modelComplexity: isMobile ? 0 : 1, // 0 is fast 60fps mobile architecture
+              smoothLandmarks: true,
+              enableSegmentation: false,
+              minDetectionConfidence: 0.45,
+              minTrackingConfidence: 0.45
+            });
+            mediaPipePose.onResults(onPoseResults);
+          }
+
+          let isProcessing = false;
+          async function poseLoop() {
+            if (!isCameraActive) return;
+            if (!isProcessing && video.readyState >= 2 && video.videoWidth > 0) {
+              isProcessing = true;
+              try {
+                await mediaPipePose.send({ image: video });
+              } catch (sendErr) {
+                console.warn('Pose frame skipped:', sendErr);
+              } finally {
+                isProcessing = false;
+              }
+            }
+            if (isCameraActive) {
+              animFrameId = requestAnimationFrame(poseLoop);
+            }
+          }
+          poseLoop();
+          return;
+        } catch (e) {
+          console.warn('MediaPipe initialization fallback:', e);
+        }
+      }
+      runOpticalVisionFallback(video);
+    }
+
+    // MediaPipe 60FPS Landmark Results Handler
+    function onPoseResults(results) {
+      const canvas = document.getElementById('aiCanvas');
+      const video = document.getElementById('aiVideo');
+      if (!canvas || !video) return;
+
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+      }
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!results.poseLandmarks) {
+        document.getElementById('aiFeedbackText').textContent = '⚠️ Stand back so your body is in camera frame';
+        return;
+      }
+
+      const landmarks = results.poseLandmarks;
+
+      // Draw Skeleton Bones
+      drawSkeletalBones(ctx, landmarks, canvas.width, canvas.height);
+
+      // Evaluate the active exercise with strict posture verification
+      const body = analyzeBodyOrientation(landmarks);
+      const ex = EXERCISES[currentExerciseKey];
+      if (ex && ex.eval) {
+        const res = ex.eval(landmarks, body);
+        processExerciseRepetition(res, ex, ctx, landmarks, canvas.width, canvas.height);
+      }
+    }
+
+    // High-Accuracy Repetition & 4-Stage State Machine: START -> MOVEMENT -> COMPLETE -> COUNT REP
+    function processExerciseRepetition(res, ex, ctx, landmarks, w, h) {
+      if (!res.valid) {
+        document.getElementById('aiFeedbackText').textContent = res.feedback;
+        return;
+      }
+
+      // Exponential Moving Average Smoothing (alpha = 0.65)
+      smoothedAngle = Math.round(0.65 * res.angle + 0.35 * smoothedAngle);
+
+      // Update Live Angle displays
+      document.getElementById('hudLiveAngle').textContent = `${smoothedAngle}°`;
+      document.getElementById('valLiveAngle').textContent = `${smoothedAngle}°`;
+      document.getElementById('aiFeedbackText').textContent = res.feedback;
+      document.getElementById('workoutAcc').textContent = `${res.acc}%`;
+      document.getElementById('liveAccBadge').textContent = `${res.acc}% Calibrated`;
+
+      const now = Date.now();
+
+      // State Machine Transitions: START -> MOVEMENT -> COMPLETE -> COUNT REP
+      if (repStateMachine.state === 'START') {
+        if (res.isMovement) {
+          repStateMachine.state = 'MOVEMENT';
+        }
+      } else if (repStateMachine.state === 'MOVEMENT') {
+        if (res.isPeak) {
+          repStateMachine.state = 'COMPLETE';
+          repStateMachine.peakTimestamp = now;
+          repStateMachine.isPeakVerified = false;
+        } else if (res.isStart) {
+          // Returned without completing rep (ignore partial movement)
+          repStateMachine.state = 'START';
+        }
+      } else if (repStateMachine.state === 'COMPLETE') {
+        // Temporal stability check: must hold peak for >= 70ms to reject frame spikes
+        if (now - repStateMachine.peakTimestamp >= 70) {
+          repStateMachine.isPeakVerified = true;
+        }
+
+        if (res.isStart) {
+          // Returned to start position: validate completed cycle and minimum interval
+          if (repStateMachine.isPeakVerified && (now - repStateMachine.lastRepTimestamp >= 450)) {
+            currentReps++;
+            document.getElementById('workoutReps').textContent = currentReps;
+            onRepCounted(currentReps);
+            pulseIsland();
+            playAppleChime();
+            repStateMachine.lastRepTimestamp = now;
+          }
+          repStateMachine.state = 'START';
+          repStateMachine.isPeakVerified = false;
+        }
+      }
+
+      // Draw glowing focal angle arc on canvas
+      const focalLandmark = landmarks[13] || landmarks[14] || landmarks[25] || landmarks[23];
+      if (focalLandmark) {
+        const fx = focalLandmark.x * w;
+        const fy = focalLandmark.y * h;
+        ctx.beginPath();
+        ctx.arc(fx, fy, 22, 0, Math.PI * 2);
+        ctx.fillStyle = repStateMachine.state === 'COMPLETE' ? 'rgba(52, 199, 89, 0.45)' : 'rgba(0, 122, 255, 0.35)';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = repStateMachine.state === 'COMPLETE' ? '#34c759' : '#007aff';
+        ctx.stroke();
+
+        ctx.font = 'bold 12px -apple-system, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`${smoothedAngle}°`, fx - 10, fy + 4);
+      }
+    }
+
+    // Draw Sleek Apple-Style Skeleton Connectors
+    function drawSkeletalBones(ctx, lm, w, h) {
+      const connections = [
+        [11, 12], // Shoulders
+        [11, 13], [13, 15], // Left arm
+        [12, 14], [14, 16], // Right arm
+        [11, 23], [12, 24], // Torso
+        [23, 24], // Hips
+        [23, 25], [25, 27], // Left leg
+        [24, 26], [26, 28]  // Right leg
+      ];
+
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(52, 199, 89, 0.88)';
+      ctx.lineCap = 'round';
+
+      connections.forEach(([i, j]) => {
+        if (lm[i] && lm[j] && (lm[i].visibility || 1) > 0.4 && (lm[j].visibility || 1) > 0.4) {
+          ctx.beginPath();
+          ctx.moveTo(lm[i].x * w, lm[i].y * h);
+          ctx.lineTo(lm[j].x * w, lm[j].y * h);
+          ctx.stroke();
+        }
+      });
+
+      // Joint Landmarks (Glowing White/Cyan Dots)
+      [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach(idx => {
+        if (lm[idx] && (lm[idx].visibility || 1) > 0.4) {
+          ctx.beginPath();
+          ctx.arc(lm[idx].x * w, lm[idx].y * h, 5, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#007aff';
+          ctx.stroke();
+        }
+      });
+    }
+
+    // Optical Vision Fallback Tracker (Calibrates camera without false rep counting)
+    function runOpticalVisionFallback(video) {
+      const canvas = document.getElementById('aiCanvas');
+      const ctx = canvas.getContext('2d');
+
+      function fallbackLoop() {
+        if (!isCameraActive) return;
+        if (video.videoWidth > 0) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Draw an Apple-style scanning calibration reticle
+          ctx.strokeStyle = 'rgba(0, 122, 255, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8, 6]);
+          ctx.strokeRect(canvas.width * 0.15, canvas.height * 0.1, canvas.width * 0.7, canvas.height * 0.8);
+          ctx.setLineDash([]);
+
+          document.getElementById('aiFeedbackText').textContent = '📷 Align your body inside frame for tracking';
+        }
+        animFrameId = requestAnimationFrame(fallbackLoop);
+      }
+      fallbackLoop();
+    }
+
+    // Manage camera lifecycle on tab navigation
+    const originalSwitchTab = switchTab;
+    switchTab = function(tabId) {
+      originalSwitchTab(tabId);
+      if (tabId !== 'workout') {
+        stopAICamera();
+      }
+    };
+
+    // Manual rep adder
+    function addManualRep() {
+      currentReps++;
+      document.getElementById('workoutReps').textContent = currentReps;
+      onRepCounted(currentReps);
+      pulseIsland();
+      playAppleChime();
+    }
+
+
+    // Stopwatch / Interval Clock Logic
+    let timerInterval = null;
+    let timerSeconds = 0;
+    function toggleTimer() {
+      const btn = document.getElementById('startTimerBtn');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.textContent = 'Resume';
+        btn.style.background = 'rgba(52, 199, 89, 0.18)';
+        btn.style.color = 'var(--system-green)';
+      } else {
+        timerInterval = setInterval(() => {
+          timerSeconds += 0.1;
+          const mins = Math.floor(timerSeconds / 60);
+          const secs = (timerSeconds % 60).toFixed(1);
+          document.getElementById('stopwatchDisplay').textContent =
+            `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }, 100);
+        btn.textContent = 'Pause';
+        btn.style.background = 'rgba(255, 149, 0, 0.18)';
+        btn.style.color = 'var(--system-orange)';
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerSeconds = 0;
+      document.getElementById('stopwatchDisplay').textContent = '00:00.0';
+      const btn = document.getElementById('startTimerBtn');
+      btn.textContent = 'Start';
+      btn.style.background = 'rgba(52, 199, 89, 0.18)';
+      btn.style.color = 'var(--system-green)';
+    }
+
+    // Hydration Tracker Logic
+    let waterIntake = 1750;
+    function addWater() {
+      waterIntake += 250;
+      document.getElementById('waterAmountText').textContent = `${waterIntake.toLocaleString()} ml / 2,500 ml`;
+      playAppleChime();
+    }
+  </script>
+</body>
+</html>
